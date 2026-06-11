@@ -36,8 +36,7 @@ create table bookings (
   user_id              uuid not null references auth.users (id),
   status               text not null default 'booked'
                          check (status in ('booked', 'cancelled')),
-  created_at           timestamptz not null default now(),
-  confirmation_message text
+  created_at           timestamptz not null default now()
 );
 
 -- Partial unique index: only one *active* booking per slot.

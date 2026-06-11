@@ -57,8 +57,7 @@ create table public.bookings (
   user_id              uuid        not null references auth.users (id),
   status               text        not null default 'booked'
                                      check (status in ('booked', 'cancelled')),
-  created_at           timestamptz not null default now(),
-  confirmation_message text
+  created_at           timestamptz not null default now()
 );
 
 -- Partial unique index: at most one row with status = 'booked' may exist per

@@ -22,7 +22,6 @@ export interface Booking {
   user_id: string
   status: BookingStatus
   created_at: string
-  confirmation_message: string | null
 }
 
 // Shape returned by the available_slots view (slots joined with services)
@@ -40,7 +39,6 @@ export interface BookingWithDetails {
   slot_id: string
   status: BookingStatus
   created_at: string
-  confirmation_message: string | null
   slots: {
     starts_at: string
     services: {

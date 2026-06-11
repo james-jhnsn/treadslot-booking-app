@@ -15,7 +15,6 @@ export function useMyBookings() {
           slot_id,
           status,
           created_at,
-          confirmation_message,
           slots (
             starts_at,
             services (
