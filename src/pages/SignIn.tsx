@@ -25,12 +25,12 @@ export function SignIn() {
         await signIn(email, password)
         navigate('/slots', { replace: true })
       } else {
-        await signUp(email, password)
-        // Supabase may require email confirmation depending on project settings.
-        // If email confirmation is disabled (recommended for this demo),
-        // the user is signed in immediately and we redirect.
-        // If it is enabled, we show a success message instead.
-        setSignUpSuccess(true)
+        const { needsConfirmation } = await signUp(email, password)
+        if (needsConfirmation) {
+          setSignUpSuccess(true)
+        } else {
+          navigate('/slots', { replace: true })
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
