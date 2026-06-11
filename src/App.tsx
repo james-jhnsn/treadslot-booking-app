@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { NavBar } from './components/NavBar'
 import { SignIn } from './pages/SignIn'
+import { AuthCallback } from './pages/AuthCallback'
 import { SlotsPage } from './pages/SlotsPage'
 import { MyBookingsPage } from './pages/MyBookingsPage'
 
@@ -26,6 +27,7 @@ export default function App() {
           <NavBar />
           <Routes>
             <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route
               path="/slots"
               element={
