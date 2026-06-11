@@ -159,7 +159,8 @@ This enforces at the database level that only one `booked` row can exist per slo
 
 Given more time, in priority order:
 
-1. **Supabase Realtime** — subscribe to the `available_slots` view so the slot list updates live across all connected browsers when a booking is made or cancelled. The infrastructure is already in place; it's a `supabase.channel()` subscription away.
+1. **Unit tests + CI** — Vitest unit tests for all hooks (especially `useCreateBooking` covering the `23505` error path) and a Playwright end-to-end suite for the booking and double-booking flows, running automatically on every push via GitHub Actions.
+2. **Supabase Realtime** — subscribe to the `available_slots` view so the slot list updates live across all connected browsers when a booking is made or cancelled. The infrastructure is already in place; it's a `supabase.channel()` subscription away.
 2. **Scheduled reminder function** — a Netlify scheduled function that queries for bookings starting in the next 24 hours and logs (or sends) a reminder. The Supabase service-role key would live server-side only in the function.
 3. **Admin view** — a separate route (gated by a role claim in Supabase) showing all bookings and allowing slot management.
 4. **Natural-language booking** — a Claude tool-use flow where a customer types "book me a tire install next Tuesday morning" and Claude resolves it to an available slot. The tool definitions would map to the existing `available_slots` view.
@@ -169,7 +170,7 @@ Given more time, in priority order:
 - **Email sending** — reminders and confirmation emails are logged only. A real deployment would wire up Resend or SendGrid.
 - **Rescheduling** — cancellation is implemented; rescheduling (cancel + re-book in one transaction) is not. It's straightforward to add as a Postgres function to keep it atomic.
 - **Slot management UI** — slots are seeded via SQL. A real app needs an admin interface for the business owner to add, remove, or block slots.
-- **Tests** — no automated tests. For a production app I'd add Vitest unit tests for the hooks and a Playwright suite covering the critical booking and double-booking paths.
+- **Tests** — no automated tests in this submission. Vitest unit tests for the hooks and a Playwright e2e suite are the first thing I'd add; see "What I'd Do Next".
 - **Rate limiting** — the `confirm-booking` Netlify Function has no rate limiting. For production, a simple token-bucket check or Netlify's built-in rate limiting would prevent API key abuse.
 
 ---
@@ -178,29 +179,29 @@ Given more time, in priority order:
 
 ### Auth
 
-- [ ] Sign up with a new email → lands on /slots
-- [ ] Sign out → redirected to /sign-in
-- [ ] Sign in with existing account → lands on /slots
-- [ ] Navigate directly to /slots or /my-bookings when signed out → redirected to /sign-in
-- [ ] Auth state persists on page refresh
+- [x] Sign up with a new email → lands on /slots
+- [x] Sign out → redirected to /sign-in
+- [x] Sign in with existing account → lands on /slots
+- [x] Navigate directly to /slots or /my-bookings when signed out → redirected to /sign-in
+- [x] Auth state persists on page refresh
 
 ### Booking
 
-- [ ] Available slots list loads and shows upcoming weekday times
-- [ ] Clicking "Book" on a slot creates a booking
-- [ ] Success state shows "Booking confirmed!" and the AI-generated message (or silently omits the message if the Claude API is unavailable)
-- [ ] The booked slot disappears from the available list after booking
-- [ ] Booking the same slot from two browser sessions simultaneously → second attempt shows "That slot was just taken" error and the list refreshes
+- [x] Available slots list loads and shows upcoming weekday times
+- [x] Clicking "Book" on a slot creates a booking
+- [x] Success state shows "Booking confirmed!" and the AI-generated message (or silently omits the message if the Claude API is unavailable)
+- [x] The booked slot disappears from the available list after booking
+- [x] Booking the same slot from two browser sessions simultaneously → second attempt shows "That slot was just taken" error and the list refreshes
 
 ### My Bookings
 
-- [ ] /my-bookings shows only the signed-in user's own bookings
-- [ ] Booked bookings show a "Cancel" button; cancelled ones show a "Cancelled" badge
-- [ ] Clicking "Cancel" changes the status to cancelled
-- [ ] Cancelling a booking makes the slot available again on /slots
+- [x] /my-bookings shows only the signed-in user's own bookings
+- [x] Booked bookings show a "Cancel" button; cancelled ones show a "Cancelled" badge
+- [x] Clicking "Cancel" changes the status to cancelled
+- [x] Cancelling a booking makes the slot available again on /slots
 
 ### Edge Cases
 
-- [ ] Empty state shown when no slots are available
-- [ ] Empty state shown when user has no bookings
-- [ ] Error messages are user-friendly (no raw Postgres errors)
+- [x] Empty state shown when no slots are available
+- [x] Empty state shown when user has no bookings
+- [x] Error messages are user-friendly (no raw Postgres errors)

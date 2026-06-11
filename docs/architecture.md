@@ -60,7 +60,6 @@ erDiagram
         uuid        user_id FK
         text        status
         timestamptz created_at
-        text        confirmation_message
     }
 
     services    ||--o{ slots    : "scheduled as"
@@ -92,7 +91,7 @@ sequenceDiagram
     FE->>SB: INSERT INTO bookings (slot_id, user_id)
     alt Slot available
         SB-->>FE: 201 — new booking row
-        FE->>NF: POST /api/confirm-booking {slotId, serviceName, startsAt}
+        FE->>NF: POST /api/confirm-booking {startsAt, serviceName}
         NF->>AI: Chat completion request
         AI-->>NF: Confirmation text
         NF-->>FE: { message }
@@ -144,8 +143,8 @@ src/
     useCancelBooking.ts    # Mutation: UPDATE status = 'cancelled'
   pages/
     SignIn.tsx
-    Slots.tsx          # Available slots list
-    MyBookings.tsx     # Customer's booking history
+    SlotsPage.tsx      # Available slots list
+    MyBookingsPage.tsx # Customer's booking history
   components/
     SlotCard.tsx
     BookingCard.tsx
