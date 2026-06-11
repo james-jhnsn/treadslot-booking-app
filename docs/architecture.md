@@ -106,32 +106,6 @@ sequenceDiagram
 
 ---
 
-## Cancellation Flow
-
-```mermaid
-sequenceDiagram
-    actor C as Customer
-    participant FE as React App
-    participant SB as Supabase
-
-    C->>FE: Open "My Bookings"
-    FE->>SB: SELECT * FROM bookings WHERE user_id = auth.uid()
-    SB-->>FE: Customer's own bookings (RLS enforced)
-
-    C->>FE: Click "Cancel" on a booked slot
-    FE->>SB: UPDATE bookings SET status = 'cancelled' WHERE id = {id}
-    note over SB: USING: user_id = auth.uid() AND status = 'booked'<br/>WITH CHECK: user_id = auth.uid() AND status = 'cancelled'
-    alt Cancellation accepted
-        SB-->>FE: Updated row
-        FE-->>C: Booking marked cancelled; slot now available to others
-    else Already cancelled or not owner
-        SB-->>FE: Zero rows updated (RLS filtered the row)
-        FE-->>C: No visible change (idempotent)
-    end
-```
-
----
-
 ## Auth Flow
 
 ```mermaid
