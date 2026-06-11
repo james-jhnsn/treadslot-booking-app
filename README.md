@@ -1,6 +1,20 @@
 # TreadSlot — Mobile Tire Service Booking
 
+**Live app:** https://your-site-name.netlify.app
+**Repository:** https://github.com/james-jhnsn/treadslot-booking-app
+
 A mobile-first booking app for same-day tire installation. Customers pick an available time slot, confirm a booking, and receive an AI-generated confirmation message. Technicians visit the customer's location.
+
+## Test Credentials
+
+A test account is pre-created on the live app:
+
+| Field | Value |
+|---|---|
+| Email | `test@treadslot.dev` |
+| Password | `test123456` |
+
+Sign in at the live URL above — no sign-up needed. Feel free to create your own account too; email confirmation is disabled.
 
 ## Tech Stack
 
@@ -114,6 +128,51 @@ npm run dev
 5. Deploy.
 
 The `[[redirects]]` rule in `netlify.toml` handles SPA client-side routing — all 404s are rewritten to `index.html`.
+
+## Architecture & Key Tradeoffs
+
+The app is a Vite + React SPA deployed on Netlify, backed by Supabase for auth and data. There is no custom backend — all data access goes through the Supabase JS client using the anon key, protected entirely by Row Level Security. The only server-side code is a single Netlify Function that proxies the Claude API call so the API key never reaches the browser.
+
+**Key tradeoffs:**
+
+- **No service-role key in the frontend.** All queries run as the authenticated user under RLS. This means the `available_slots` view must run as the database owner (not `security_invoker`) so it can see all active bookings — not just the current user's — when determining which slots are taken. See `docs/decisions.md` ADR-003.
+- **Cancellation uses a status field, not DELETE.** Cancelled bookings are retained for history. The partial unique index only counts `status = 'booked'` rows, so a cancelled slot automatically becomes available again without any extra logic.
+- **AI confirmation is non-fatal.** The Claude API call happens after the booking INSERT succeeds. If it fails, the booking still goes through — the user just doesn't see a confirmation message. A Claude outage never breaks the booking flow.
+- **Confirmation message is not persisted.** Storing it in the DB would conflict with the cancellation RLS policy (`WITH CHECK (status = 'cancelled')`). It lives in React state only, shown once after booking.
+
+Full decision log: [`docs/decisions.md`](docs/decisions.md)
+Full architecture diagrams: [`docs/architecture.md`](docs/architecture.md)
+
+## How Double-Booking is Prevented
+
+A **partial unique index** on the `bookings` table:
+
+```sql
+create unique index one_active_booking_per_slot
+  on bookings(slot_id)
+  where (status = 'booked');
+```
+
+This enforces at the database level that only one `booked` row can exist per slot. Two concurrent requests that both pass the application-level availability check will race to INSERT — one succeeds, the other hits a Postgres `23505` unique violation. The app catches that error code and surfaces it as a user-friendly "that slot was just taken" message, then refreshes the slot list. No advisory locks, no SELECT-then-INSERT race window.
+
+## What I'd Do Next
+
+Given more time, in priority order:
+
+1. **Supabase Realtime** — subscribe to the `available_slots` view so the slot list updates live across all connected browsers when a booking is made or cancelled. The infrastructure is already in place; it's a `supabase.channel()` subscription away.
+2. **Scheduled reminder function** — a Netlify scheduled function that queries for bookings starting in the next 24 hours and logs (or sends) a reminder. The Supabase service-role key would live server-side only in the function.
+3. **Admin view** — a separate route (gated by a role claim in Supabase) showing all bookings and allowing slot management.
+4. **Natural-language booking** — a Claude tool-use flow where a customer types "book me a tire install next Tuesday morning" and Claude resolves it to an available slot. The tool definitions would map to the existing `available_slots` view.
+
+## What I Knowingly Skipped
+
+- **Email sending** — reminders and confirmation emails are logged only. A real deployment would wire up Resend or SendGrid.
+- **Rescheduling** — cancellation is implemented; rescheduling (cancel + re-book in one transaction) is not. It's straightforward to add as a Postgres function to keep it atomic.
+- **Slot management UI** — slots are seeded via SQL. A real app needs an admin interface for the business owner to add, remove, or block slots.
+- **Tests** — no automated tests. For a production app I'd add Vitest unit tests for the hooks and a Playwright suite covering the critical booking and double-booking paths.
+- **Rate limiting** — the `confirm-booking` Netlify Function has no rate limiting. For production, a simple token-bucket check or Netlify's built-in rate limiting would prevent API key abuse.
+
+---
 
 ## Manual Test Checklist
 
