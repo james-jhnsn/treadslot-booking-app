@@ -87,10 +87,8 @@ In production this seed would be replaced by an admin scheduling tool. For the a
 -- Slots that are in the future and not currently held by an active booking.
 -- Left-joins only against status = 'booked' so a cancellation puts the
 -- slot back in the list without deleting any rows.
--- security_invoker = true: view runs as the querying user, not the view owner,
--- so RLS on the underlying tables is evaluated correctly.
-create view available_slots
-  with (security_invoker = true) as
+-- security_invoker is NOT set — see explanation below.
+create view available_slots as
   select
     s.id,
     s.starts_at,
@@ -110,13 +108,15 @@ create view available_slots
 grant select on available_slots to authenticated;
 ```
 
-### Why `security_invoker = true`
+### Why `security_invoker` is NOT used on this view
 
-By default, Postgres views run with the permissions of the user who *created* the view (the owner). If the owner has elevated privileges, a query through the view could bypass RLS on the underlying tables — the view owner's permissions are used, not the querying customer's.
+`security_invoker = true` (added in PostgreSQL 15) makes a view execute with the invoking user's permissions instead of the view owner's. For most views that expose per-user data this is the right call — but for `available_slots` it would be a correctness bug.
 
-`security_invoker = true` reverses this: the view executes with the permissions of the user issuing the query. This means the RLS policies on `slots` and `services` are evaluated as the authenticated customer, which is the intended behaviour.
+The view's LEFT JOIN on `bookings` needs to see **all** active bookings — not just the querying user's — to correctly identify which slots are taken. If `security_invoker = true` were set, the bookings RLS policy (`user_id = auth.uid()`) would apply inside the join, hiding every other customer's bookings. Slots booked by other users would appear falsely available, and the user would only discover the conflict when the insert hits the partial unique index and returns a `23505` error.
 
-The `GRANT SELECT ON available_slots TO authenticated` is also required. RLS controls row-level access; the grant controls whether the role can query the view object at all. Without the grant, an authenticated user receives a permission-denied error before Postgres even evaluates RLS.
+The view owner in Supabase is `postgres` (BYPASSRLS), so the default (owner's permissions) evaluates the LEFT JOIN against all bookings correctly. The view exposes no booking details — only slot metadata — so the bypass is safe.
+
+The `GRANT SELECT ON available_slots TO authenticated` is still required. RLS controls row-level access; the grant controls whether the role can reference the view object at all. Without the grant, an authenticated user receives a permission-denied error before Postgres evaluates anything.
 
 ---
 

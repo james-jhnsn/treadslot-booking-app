@@ -1,0 +1,18 @@
+[build]
+  command   = "npm run build"
+  publish   = "dist"
+  functions = "netlify/functions"
+
+[dev]
+  command    = "npm run dev"
+  targetPort = 5173
+  port       = 8888
+
+[functions]
+  node_bundler = "esbuild"
+
+# Serve the SPA index for all non-asset routes so React Router handles navigation
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

@@ -106,14 +106,16 @@ create policy "users can cancel own bookings"
 -- Left-joining only on status = 'booked' means a cancellation puts the slot
 -- back in the list without any row deletion.
 --
--- security_invoker = true: the view executes with the permissions of the
--- querying user, not the view owner. Without this, the view owner's elevated
--- privileges could bypass RLS on the underlying tables. With it, the policies
--- on public.slots and public.services are evaluated as the authenticated caller.
+-- NOTE: security_invoker is intentionally NOT set here.
+-- The view owner is the Supabase postgres role (BYPASSRLS), so the LEFT JOIN
+-- on bookings sees ALL rows regardless of RLS. This is required: if the view
+-- ran as the querying user, the bookings RLS (user_id = auth.uid()) would hide
+-- every other customer's bookings in the join, making their booked slots appear
+-- falsely available. The view exposes no booking details — only slot metadata —
+-- so the owner bypass is safe.
+-- The GRANT below still limits access to the authenticated role.
 
-create view public.available_slots
-  with (security_invoker = true)
-as
+create view public.available_slots as
   select
     s.id,
     s.starts_at,
