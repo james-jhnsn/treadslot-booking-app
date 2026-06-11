@@ -27,7 +27,7 @@ export function useMyBookings() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return data as BookingWithDetails[]
+      return data as unknown as BookingWithDetails[]
     },
   })
 }
