@@ -171,7 +171,6 @@ Given more time, in priority order:
 - **Rescheduling** — cancellation is implemented; rescheduling (cancel + re-book in one transaction) is not. It's straightforward to add as a Postgres function to keep it atomic.
 - **Slot management UI** — slots are seeded via SQL. A real app needs an admin interface for the business owner to add, remove, or block slots.
 - **Tests** — no automated tests in this submission. Vitest unit tests for the hooks and a Playwright e2e suite are the first thing I'd add; see "What I'd Do Next".
-- **Rate limiting** — the `confirm-booking` Netlify Function has no rate limiting. For production, a simple token-bucket check or Netlify's built-in rate limiting would prevent API key abuse.
 
 ---
 
