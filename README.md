@@ -1,7 +1,6 @@
 # TreadSlot — Mobile Tire Service Booking
 
-**Live app:** https://your-site-name.netlify.app
-**Repository:** https://github.com/james-jhnsn/treadslot-booking-app
+**Live app:** [https://your-site-name.netlify.app](https://treadslot-booking-app.netlify.app/slots)
 
 A mobile-first booking app for same-day tire installation. Customers pick an available time slot, confirm a booking, and receive an AI-generated confirmation message. Technicians visit the customer's location.
 
